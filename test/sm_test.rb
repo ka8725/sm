@@ -148,6 +148,19 @@ describe StateMachine do
         machine.walk!
         assert_equal :walking, machine.state
       end
+
+      it 'defines predicates' do
+        machine = define_state_machine do
+          state :standing
+          state :walking
+
+          event :walk do
+            transitions from: :standing, to: :walking
+          end
+        end.new(:standing)
+
+        assert_equal true, machine.can_walk?
+      end
     end
   end
 

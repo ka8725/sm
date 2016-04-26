@@ -16,14 +16,26 @@ module StateMachine
       target.set_state(find_transition!(target.state).to)
     end
 
+    def can_execute?(target)
+      @state_machine.state_must_be_defined!(target.state)
+      return false unless find_transition(target.state)
+      true
+    end
+
     def transitions(from:, to:)
       Array(from).each { |from_state| add_transition(from_state, to) }
     end
 
     private
 
-    # TODO: optimize search with hash table store
     def find_transition!(from)
+      find_transition(from).tap do |transition|
+        fail "No defined transition for the state :#{from}" unless transition
+      end
+    end
+
+    # TODO: optimize search with hash table store
+    def find_transition(from)
       transitions_store.find { |tr| tr.from == from }
     end
 
@@ -137,6 +149,10 @@ module StateMachine
 
       define_method("#{name}!") do
         event.execute(self)
+      end
+
+      define_method("can_#{name}?") do
+        event.can_execute?(self)
       end
     end
 
