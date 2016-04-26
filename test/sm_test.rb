@@ -90,24 +90,6 @@ describe StateMachine do
             transitions from: :standing, to: :walking
           end
         end)
-
-        assert_nil(error_message_on_dsl_definition do
-          state :standing
-          state :walking
-          state :running
-
-          event :walk do
-            transitions from: :standing, to: :walking
-          end
-
-          event :run do
-            transitions from: [:standing, :walking], to: :running
-          end
-
-          event :hold do
-            transitions from: [:walking, :running], to: :standing
-          end
-        end)
       end
 
       it 'does not allow to define transitions for not defined states' do
@@ -151,6 +133,21 @@ describe StateMachine do
             end
           end)
       end
+
+      it 'defines events' do
+        machine = define_state_machine do
+          state :standing
+          state :walking
+
+          event :walk do
+            transitions from: :standing, to: :walking
+          end
+        end.new(:standing)
+
+        assert_equal :standing, machine.state
+        machine.walk!
+        assert_equal :walking, machine.state
+      end
     end
   end
 
@@ -164,7 +161,7 @@ describe StateMachine do
     end
 
     it 'does not allow to have state machine with nil state' do
-      error =assert_raises ArgumentError do
+      error = assert_raises ArgumentError do
         define_state_machine do
           event :standing
         end.new

@@ -11,15 +11,21 @@ module StateMachine
       instance_eval(&block) if block
     end
 
+    def execute(target)
+      @state_machine.state_must_be_defined!(target.state)
+      target.set_state(find_transition!(target.state).to)
+    end
+
     def transitions(from:, to:)
-      Array(from).each do |from_state|
-        Array(to).each do |to_state|
-          add_transition(from_state, to_state)
-        end
-      end
+      Array(from).each { |from_state| add_transition(from_state, to) }
     end
 
     private
+
+    # TODO: optimize search with hash table store
+    def find_transition!(from)
+      transitions_store.find { |tr| tr.from == from }
+    end
 
     def add_transition(from, to)
       transition_is_not_defined!(from, to)
@@ -41,6 +47,7 @@ module StateMachine
       fail ArgumentError, "Transition :#{from} -> :#{to} is invalid"
     end
 
+    # TODO: optimize search with hash table store
     def transition_is_not_defined!(from, to)
       transitions_store.each do |transition|
         next  if transition.from != from || transition.to != to
@@ -125,7 +132,12 @@ module StateMachine
     end
 
     def add_event(name, &block)
-      events.add(Event.new(name, self, &block))
+      event = Event.new(name, self, &block)
+      events.add(event)
+
+      define_method("#{name}!") do
+        event.execute(self)
+      end
     end
 
     def event_name_must_be_safe!(name)
@@ -147,14 +159,14 @@ module StateMachine
     @state = set_state(initial_state || statically_defined_initial_state)
   end
 
-  private
-
   def set_state(name)
     state_value_must_be_safe!(name)
     state_must_be_defined!(name)
 
     @state = name
   end
+
+  private
 
   def state_value_must_be_safe!(name)
     self.class.state_value_must_be_safe!(name)
