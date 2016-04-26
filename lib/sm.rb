@@ -53,6 +53,8 @@ module StateMachine
       case transition.condition
       when Proc
         target.instance_eval(&transition.condition)
+      when Symbol
+        target.send(transition.condition)
       else
         fail 'Guard clause must be Symbol or Proc'
       end

@@ -162,7 +162,7 @@ describe StateMachine do
         assert_equal true, machine.can_walk?
       end
 
-      it 'allows to define guard clauses' do
+      it 'allows to define guard clauses with lambda' do
         machine = define_state_machine do
           attr_accessor :weather
 
@@ -178,6 +178,23 @@ describe StateMachine do
         assert_equal false, machine.can_walk?
 
         machine.weather = 'good'
+        assert_equal true, machine.can_walk?
+      end
+
+      it 'allows to define guard clauses with symbol' do
+        machine = define_state_machine do
+          state :standing
+          state :walking
+
+          event :walk do
+            transitions from: :standing, to: :walking, when: :good_weather?
+          end
+        end.new(:standing)
+
+        machine.define_singleton_method(:good_weather?) { false }
+        assert_equal false, machine.can_walk?
+
+        machine.define_singleton_method(:good_weather?) { true }
         assert_equal true, machine.can_walk?
       end
     end
