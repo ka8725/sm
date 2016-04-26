@@ -2,7 +2,7 @@ require 'sm/version'
 require 'set'
 
 module StateMachine
-  Transition = Struct.new(:from, :to)
+  Transition = Struct.new(:from, :to, :condition)
 
   class Event
     def initialize(name, state_machine, &block)
@@ -13,37 +13,56 @@ module StateMachine
 
     def execute(target)
       @state_machine.state_must_be_defined!(target.state)
-      target.set_state(find_transition!(target.state).to)
+      target.set_state(find_transition!(target).to)
     end
 
     def can_execute?(target)
       @state_machine.state_must_be_defined!(target.state)
-      return false unless find_transition(target.state)
+      return false unless find_transition(target)
       true
     end
 
-    def transitions(from:, to:)
-      Array(from).each { |from_state| add_transition(from_state, to) }
+    def transitions(params = {})
+      from = params.fetch(:from)
+      to = params.fetch(:to)
+      condition = params.fetch(:when, nil)
+
+      Array(from).each { |from_state| add_transition(from_state, to, condition) }
     end
 
     private
 
-    def find_transition!(from)
-      find_transition(from).tap do |transition|
-        fail "No defined transition for the state :#{from}" unless transition
+    def find_transition!(target)
+      find_transition(target).tap do |transition|
+        fail "No defined transition for the state :#{target.state}" unless transition
       end
     end
 
-    # TODO: optimize search with hash table store
-    def find_transition(from)
-      transitions_store.find { |tr| tr.from == from }
+    def find_transition(target)
+      from = target.state
+      transitions_store.find do |transition|
+        next unless transition.from == from
+
+        satisfied_condition?(target, transition)
+      end
     end
 
-    def add_transition(from, to)
+    def satisfied_condition?(target, transition)
+      return true unless transition.condition
+
+      case transition.condition
+      when Proc
+        target.instance_eval(&transition.condition)
+      else
+        fail 'Guard clause must be Symbol or Proc'
+      end
+    end
+
+    def add_transition(from, to, condition)
       transition_is_not_defined!(from, to)
       transition_is_valid!(from, to)
 
-      transitions_store.push(Transition.new(from, to))
+      transitions_store.push(Transition.new(from, to, condition))
     end
 
     def transitions_store
@@ -59,7 +78,6 @@ module StateMachine
       fail ArgumentError, "Transition :#{from} -> :#{to} is invalid"
     end
 
-    # TODO: optimize search with hash table store
     def transition_is_not_defined!(from, to)
       transitions_store.each do |transition|
         next  if transition.from != from || transition.to != to

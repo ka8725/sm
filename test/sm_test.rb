@@ -161,6 +161,25 @@ describe StateMachine do
 
         assert_equal true, machine.can_walk?
       end
+
+      it 'allows to define guard clauses' do
+        machine = define_state_machine do
+          attr_accessor :weather
+
+          state :standing
+          state :walking
+
+          event :walk do
+            transitions from: :standing, to: :walking, when: -> (_) { weather == 'good' }
+          end
+        end.new(:standing)
+
+        machine.weather = 'bad'
+        assert_equal false, machine.can_walk?
+
+        machine.weather = 'good'
+        assert_equal true, machine.can_walk?
+      end
     end
   end
 
