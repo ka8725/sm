@@ -1,41 +1,42 @@
-# Sm
+# State Machine
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/sm`. To experiment with that code, run `bin/console` for an interactive prompt.
+Implement a simple library that allows defining state machines. Ensure good test coverage of the library.
 
-TODO: Delete this and the text above, and describe your gem
+An example of a state machine definition:
 
-## Installation
+``` ruby
+class MovementState
+  include StateMachine
 
-Add this line to your application's Gemfile:
+  state :standing, initial: true
+  state :walking
+  state :running
 
-```ruby
-gem 'sm'
+  event :walk do
+    transitions from: :standing, to: :walking
+  end
+
+  event :run do
+    transitions from: [:standing, :walking], to: :running
+  end
+
+  event :hold do
+    transitions from: [:walking, :running], to: :standing
+  end
+end
+
+movement_state = MovementState.new(:standing)
+movement_state.walk!
+movement_state.walking? # => true
 ```
 
-And then execute:
+Consider implementing the following features:
 
-    $ bundle
+- Ensure that the definition of the state machine is valid (e.g., only a single initial state, no undefined states in transition definitions).
+- Raise an error when the event doesn't have any transitions allowed for the current state.
+- Define callbacks for entering a state, leaving a state or making a particular transition.
+- Check if the event can be triggered (e.g., by calling `#can_walk?`).
+- Define guard clauses for transitions by providing `:when` option to a transition definition. It can accept either a lambda, which implements the guard clause, or a symbol, which references the method name.
 
-Or install it yourself as:
-
-    $ gem install sm
-
-## Usage
-
-TODO: Write usage instructions here
-
-## Development
-
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
-
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
-
-## Contributing
-
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/sm. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
-
-
-## License
-
-The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
-
+Bonus task:
+- Write a script to generate a diagram for the state machine showing states and possible transitions (e.g., using `graphviz` gem).
