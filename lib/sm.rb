@@ -33,7 +33,14 @@ module StateMachine
       def add_state(name)
         state_must_not_be_defined!(name)
 
+        define_predicate(name)
         states.add(name)
+      end
+
+      def define_predicate(name)
+        define_method("#{name}?") do
+          state == name
+        end
       end
 
       def states

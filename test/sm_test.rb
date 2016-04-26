@@ -48,6 +48,12 @@ describe StateMachine do
             state 'standing'
           end)
       end
+
+      it 'defines predicates' do
+        sm = MovementState.new(:walking)
+        refute sm.standing?
+        assert sm.walking?
+      end
     end
   end
 
