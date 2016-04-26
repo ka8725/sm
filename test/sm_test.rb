@@ -90,6 +90,24 @@ describe StateMachine do
             transitions from: :standing, to: :walking
           end
         end)
+
+        assert_nil(error_message_on_dsl_definition do
+          state :standing
+          state :walking
+          state :running
+
+          event :walk do
+            transitions from: :standing, to: :walking
+          end
+
+          event :run do
+            transitions from: [:standing, :walking], to: :running
+          end
+
+          event :hold do
+            transitions from: [:walking, :running], to: :standing
+          end
+        end)
       end
 
       it 'does not allow to define transitions for not defined states' do
