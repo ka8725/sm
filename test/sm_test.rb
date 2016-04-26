@@ -197,6 +197,27 @@ describe StateMachine do
         machine.define_singleton_method(:good_weather?) { true }
         assert_equal true, machine.can_walk?
       end
+
+      it 'allows to define callbacks' do
+        machine = define_state_machine do
+          attr_accessor :performed_transition
+
+          state :standing
+          state :walking
+
+          event :walk do
+            transitions from: :standing, to: :walking
+          end
+        end.new(:standing)
+
+        machine.define_singleton_method(:state_changed) do |from, to|
+          self.performed_transition = ":#{from} -> :#{to}"
+        end
+
+        assert_nil machine.performed_transition
+        machine.walk!
+        assert_equal ':standing -> :walking', machine.performed_transition
+      end
     end
   end
 

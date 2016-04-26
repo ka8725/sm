@@ -13,7 +13,9 @@ module StateMachine
 
     def execute(target)
       @state_machine.state_must_be_defined!(target.state)
-      target.set_state(find_transition!(target).to)
+      transition = find_transition!(target)
+      target.set_state(transition.to)
+      target.state_changed(transition.from, transition.to)
     end
 
     def can_execute?(target)
@@ -200,6 +202,10 @@ module StateMachine
     state_must_be_defined!(name)
 
     @state = name
+  end
+
+  # Override this method to handle state changes
+  def state_changed(from, to)
   end
 
   private
