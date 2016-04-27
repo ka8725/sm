@@ -40,3 +40,8 @@ Consider implementing the following features:
 
 Bonus task:
 - Write a script to generate a diagram for the state machine showing states and possible transitions (e.g., using `graphviz` gem).
+
+
+# State changes listening solution
+
+I could implement callbacks for state changes like it's done it the [state_machine](https://github.com/pluginaweek/state_machine) gem. But I don't like the idea with blocks or via private method calls because in both cases the file where state machine is defined is getting too complex and unreadable. Moreover it's difficult to cover this code by unit tests. So I prefer to move the handlers part to other "subsystem" and use there pure Ruby code rather than some DSL. That's why overriding just one method (the `state_changed`) is enough. I wrote an example how I would handle state changes with complex buiseness logic. See `example.rb` file.

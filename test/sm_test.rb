@@ -85,9 +85,14 @@ describe StateMachine do
         assert_nil(error_message_on_dsl_definition do
           state :standing
           state :walking
+          state :running
 
           event :walk do
             transitions from: :standing, to: :walking
+          end
+
+          event :run do
+            transitions from: [:standing, :walking], to: :running
           end
         end)
       end
@@ -153,13 +158,16 @@ describe StateMachine do
         machine = define_state_machine do
           state :standing
           state :walking
+          state :running
 
           event :walk do
-            transitions from: :standing, to: :walking
+            transitions from: [:standing, :running], to: :walking
           end
-        end.new(:standing)
+        end
 
-        assert_equal true, machine.can_walk?
+        assert_equal true, machine.new(:standing).can_walk?
+        assert_equal true, machine.new(:running).can_walk?
+        assert_equal false, machine.new(:walking).can_walk?
       end
 
       it 'allows to define guard clauses with lambda' do
@@ -210,13 +218,13 @@ describe StateMachine do
           end
         end.new(:standing)
 
-        machine.define_singleton_method(:state_changed) do |from, to|
-          self.performed_transition = ":#{from} -> :#{to}"
+        machine.define_singleton_method(:state_changed) do |event, from, to|
+          self.performed_transition = "#{event}: :#{from} -> :#{to}"
         end
 
         assert_nil machine.performed_transition
         machine.walk!
-        assert_equal ':standing -> :walking', machine.performed_transition
+        assert_equal 'walk: :standing -> :walking', machine.performed_transition
       end
     end
   end
